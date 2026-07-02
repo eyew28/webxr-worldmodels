@@ -6,8 +6,8 @@
  * frontend already knows which splat is loaded, so no vision guess is needed).
  *
  * `match` = lowercase substrings of the splat URL/filename that identify it.
- * When adding the La Nuit / L'Hommage à Cézanne splat files, name them so they
- * contain one of these tokens (e.g. `la_nuit.spz`, `hommage_cezanne.spz`).
+ * La Nuit and L'Hommage à Cézanne ship as `Lanuit.ply` and `Cézanne.ply`,
+ * both already covered by the tokens below.
  */
 export interface Exhibit {
   /** Exact backend exhibit name — sent to /ask as `exhibit`. */
