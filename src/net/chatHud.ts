@@ -19,16 +19,21 @@ export interface ChatHudHandle {
 }
 
 /**
- * DOM chat panel (netblocks integration sample pattern).
- * @see https://github.com/google/xrblocks/tree/main/src/addons/netblocks/samples/integration
+ * Builds the chat panel DOM. Returns the element and a handle.
+ * Positioning is handled by the toolbar — this function does NOT append to body.
  */
-export function mountChatHud(session: RoomSession): ChatHudHandle {
+export function buildChatPanel(session: RoomSession): {
+  element: HTMLElement;
+  handle: ChatHudHandle;
+} {
   const displayName = makeDisplayName();
   const peerNames = new Map<string, string>([
     [session.localPeerId, displayName],
   ]);
 
-  session.emit(DISPLAY_NAME_TOPIC, { name: displayName } satisfies DisplayNamePayload);
+  session.emit(DISPLAY_NAME_TOPIC, {
+    name: displayName,
+  } satisfies DisplayNamePayload);
 
   session.on(DISPLAY_NAME_TOPIC, (payload, fromPeerId) => {
     const p = payload as DisplayNamePayload;
@@ -36,29 +41,16 @@ export function mountChatHud(session: RoomSession): ChatHudHandle {
   });
 
   const panel = document.createElement("div");
-  panel.id = "chat-hud";
   Object.assign(panel.style, {
-    position: "fixed",
-    bottom: "12px",
-    right: "12px",
-    width: "300px",
-    maxHeight: "40vh",
+    padding: "10px",
     display: "flex",
     flexDirection: "column",
-    background: "rgba(20, 20, 30, 0.85)",
-    color: "#fff",
-    borderRadius: "12px",
-    padding: "10px",
     font: "13px system-ui, sans-serif",
-    backdropFilter: "blur(8px)",
-    zIndex: "999",
-    userSelect: "none",
-    WebkitUserSelect: "none",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-  } as Partial<CSSStyleDeclaration>);
+    color: "#fff",
+  });
 
   const header = document.createElement("div");
-  header.textContent = `Chat · ${displayName}`;
+  header.textContent = `💬 Chat · ${displayName}`;
   Object.assign(header.style, {
     fontWeight: "600",
     marginBottom: "6px",
@@ -70,8 +62,8 @@ export function mountChatHud(session: RoomSession): ChatHudHandle {
   Object.assign(log.style, {
     flex: "1 1 auto",
     overflowY: "auto",
-    minHeight: "100px",
-    maxHeight: "28vh",
+    minHeight: "80px",
+    maxHeight: "min(180px, 25vh)",
     padding: "4px 0",
   });
   panel.appendChild(log);
@@ -118,7 +110,7 @@ export function mountChatHud(session: RoomSession): ChatHudHandle {
 
   const voiceBtn = document.createElement("button");
   voiceBtn.type = "button";
-  voiceBtn.textContent = "Enable voice";
+  voiceBtn.textContent = "🎙 Enable voice";
   Object.assign(voiceBtn.style, {
     marginTop: "8px",
     padding: "8px 14px",
@@ -129,10 +121,9 @@ export function mountChatHud(session: RoomSession): ChatHudHandle {
     fontSize: "13px",
     cursor: "pointer",
     alignSelf: "flex-start",
-  });
+    transition: "background 0.2s ease",
+  } as Partial<CSSStyleDeclaration>);
   panel.appendChild(voiceBtn);
-
-  document.body.appendChild(panel);
 
   function appendLine(p: ChatMessagePayload, self: boolean): void {
     const line = document.createElement("div");
@@ -181,8 +172,7 @@ export function mountChatHud(session: RoomSession): ChatHudHandle {
   });
 
   return {
-    displayName,
-    voiceButton: voiceBtn,
-    appendSystemLine,
+    element: panel,
+    handle: { displayName, voiceButton: voiceBtn, appendSystemLine },
   };
 }

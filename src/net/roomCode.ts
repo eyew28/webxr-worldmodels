@@ -52,25 +52,18 @@ function leaveRoom() {
   location.href = url.toString();
 }
 
-export function buildRoomCodeHud(currentCode: string | null): void {
-  if (typeof document === "undefined") return;
-
+/**
+ * Builds the room panel content element.
+ * Positioning is handled by the toolbar — this function does NOT append to body.
+ */
+export function buildRoomPanel(currentCode: string | null): HTMLElement {
   const root = document.createElement("div");
-  root.id = "room-hud";
   Object.assign(root.style, {
-    position: "fixed",
-    top: "12px",
-    right: "12px",
-    padding: "12px 14px",
-    background: "rgba(20,20,30,0.85)",
+    padding: "14px",
     color: "#eee",
-    borderRadius: "10px",
     fontFamily: "sans-serif",
     fontSize: "13px",
     lineHeight: "1.4",
-    zIndex: "999",
-    minWidth: "220px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
   });
 
   const peerLine = document.createElement("div");
@@ -89,21 +82,26 @@ export function buildRoomCodeHud(currentCode: string | null): void {
   }
 
   root.appendChild(peerLine);
-  document.body.appendChild(root);
+  return root;
 }
 
 function renderDisconnected(root: HTMLDivElement) {
   const title = document.createElement("div");
-  title.textContent = "Local mode (this browser only)";
-  Object.assign(title.style, { marginBottom: "8px", color: "#bbb" });
+  title.textContent = "👥 Multiplayer Room";
+  Object.assign(title.style, {
+    fontWeight: "600",
+    color: "#bfa9ff",
+    marginBottom: "8px",
+  });
   root.appendChild(title);
 
   const hint = document.createElement("div");
-  hint.textContent = "Open two tabs here to sync splats locally.";
+  hint.textContent = "Start a room and share the code with friends to explore together.";
   Object.assign(hint.style, {
     marginBottom: "10px",
     color: "#888",
     fontSize: "12px",
+    lineHeight: "1.5",
   });
   root.appendChild(hint);
 
@@ -112,6 +110,11 @@ function renderDisconnected(root: HTMLDivElement) {
   startBtn.style.marginBottom = "8px";
   startBtn.addEventListener("click", () => gotoRoom(generateRoomCode()));
   root.appendChild(startBtn);
+
+  const joinLabel = document.createElement("div");
+  joinLabel.textContent = "Or join with a code:";
+  Object.assign(joinLabel.style, { fontSize: "12px", color: "#888", marginBottom: "6px" });
+  root.appendChild(joinLabel);
 
   const joinRow = document.createElement("div");
   Object.assign(joinRow.style, {
@@ -161,17 +164,30 @@ function renderDisconnected(root: HTMLDivElement) {
   root.appendChild(joinRow);
 }
 
-function renderConnected(root: HTMLDivElement, code: string, _peerLine: HTMLDivElement) {
+function renderConnected(
+  root: HTMLDivElement,
+  code: string,
+  _peerLine: HTMLDivElement,
+) {
+  const title = document.createElement("div");
+  title.textContent = "👥 You're in a room";
+  Object.assign(title.style, {
+    fontWeight: "600",
+    color: "#bfa9ff",
+    marginBottom: "8px",
+  });
+  root.appendChild(title);
+
   const codeRow = document.createElement("div");
   Object.assign(codeRow.style, {
     display: "flex",
     gap: "8px",
     alignItems: "center",
-    marginBottom: "8px",
+    marginBottom: "10px",
   });
 
   const label = document.createElement("span");
-  label.textContent = "Room";
+  label.textContent = "Room code:";
   label.style.color = "#bbb";
   codeRow.appendChild(label);
 
@@ -192,7 +208,7 @@ function renderConnected(root: HTMLDivElement, code: string, _peerLine: HTMLDivE
   codeBtn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(code);
-      codeBtn.textContent = "Copied";
+      codeBtn.textContent = "Copied ✓";
       setTimeout(() => (codeBtn.textContent = "Copy code"), 1500);
     } catch {
       codeBtn.textContent = code;
@@ -204,6 +220,7 @@ function renderConnected(root: HTMLDivElement, code: string, _peerLine: HTMLDivE
   leaveBtn.style.width = "100%";
   leaveBtn.style.background = "transparent";
   leaveBtn.style.color = "#bbb";
+  leaveBtn.style.border = "1px solid #444";
   leaveBtn.addEventListener("click", leaveRoom);
   root.appendChild(leaveBtn);
 }
@@ -212,7 +229,7 @@ function makeButton(text: string): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.textContent = text;
   Object.assign(btn.style, {
-    padding: "6px 10px",
+    padding: "7px 10px",
     background: "#9177c7",
     color: "#fff",
     border: "none",

@@ -11,18 +11,19 @@ import {
   World,
 } from "@iwsdk/core";
 import { DesktopControlsSystem } from "./desktopControls.js";
-import { GaussianSplatLoader, GaussianSplatLoaderSystem,} from "./gaussianSplatLoader.js";
-import { mountLoadSplatHud } from "./loadSplatHud.js";
-import { mountRoomHud, MultiplayerSystem } from "./multiplayerSystem.js";
-import { mountMuseXrHud } from "./museXrHud.js";
+import { GaussianSplatLoader, GaussianSplatLoaderSystem } from "./gaussianSplatLoader.js";
+import { mountLogo } from "./loadSplatHud.js";
+import { MultiplayerSystem } from "./multiplayerSystem.js";
+import { mountToolbar } from "./toolbar.js";
+import { mountWelcomeCard } from "./welcomeCard.js";
 import { applyEquirectSkybox } from "./skybox.js";
-mountRoomHud();
-mountMuseXrHud();
 
+// ── Persistent UI (before world init) ───────────────────────────────────────
+mountLogo();
+const toolbarInstance = mountToolbar();
+mountWelcomeCard(() => toolbarInstance.openSophie());
 
-// ------------------------------------------------------------
-// World (IWSDK settings)
-// ------------------------------------------------------------
+// ── World (IWSDK settings) ───────────────────────────────────────────────────
 World.create(document.getElementById("scene-container") as HTMLDivElement, {
   assets: {},
   xr: {
@@ -52,11 +53,10 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
       .registerSystem(DesktopControlsSystem)
       .registerSystem(MultiplayerSystem);
 
-    mountLoadSplatHud(world);
+    // Wire toolbar Load panel and VR button now that world is ready
+    toolbarInstance.initWorld(world);
 
-    // ------------------------------------------------------------
-    // Gaussian Splat
-    // ------------------------------------------------------------
+    // ── Gaussian Splat ───────────────────────────────────────────────────────
     const splatEntity = world.createTransformEntity();
     splatEntity.addComponent(GaussianSplatLoader);
 
@@ -72,31 +72,18 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
       }
     });
 
-
-    // ------------------------------------------------------------
-    // Invisible floor for locomotion (must be a Mesh for IWSDK raycasting)
-    // ------------------------------------------------------------
+    // ── Invisible floor for locomotion ───────────────────────────────────────
     const floorGeometry = new PlaneGeometry(100, 100);
     floorGeometry.rotateX(-Math.PI / 2);
     const floor = new Mesh(floorGeometry, new MeshBasicMaterial());
     floor.visible = false;
     const floorEntity = world.createTransformEntity(floor);
-    // Locomotion system can initialize a tick later on startup.
     requestAnimationFrame(() => {
       floorEntity.addComponent(LocomotionEnvironment, {
         type: EnvironmentType.STATIC,
       });
     });
-
-    // ------------------------------------------------------------
-    // Hologram Sphere (distance-grabbable, translate in place)
-    // ------------------------------------------------------------
-    // spawnHologramSphere(world);
-
   })
   .catch((err) => {
     console.error("[World] Failed to create the IWSDK world:", err);
-    const container = document.getElementById("scene-container");
   });
-
-  
