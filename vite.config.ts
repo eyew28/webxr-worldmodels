@@ -10,6 +10,13 @@ import mkcert from "vite-plugin-mkcert";
 
 const threePkg = path.resolve(__dirname, "node_modules/three");
 
+/** Dev proxy target for the Sophie AI backend (see server.proxy below). */
+const SOPHIE_PROXY = {
+  target: "https://louvre-xr-backend-production.up.railway.app",
+  changeOrigin: true,
+  secure: true,
+};
+
 /**
  * Redirect IWSDK's bundled super-three@0.177.0 imports to the project's
  * single Three.js instance, preventing duplicate Three.js modules and the
@@ -56,7 +63,18 @@ export default defineConfig({
     },
     dedupe: ["three"],
   },
-  server: { host: "0.0.0.0", port: 8081, open: true },
+  server: {
+    host: "0.0.0.0",
+    port: 8081,
+    open: true,
+    // Proxy Sophie backend calls in dev so they are same-origin and bypass
+    // CORS (the Railway backend only whitelists prod + :3000/:5173 origins).
+    proxy: {
+      "/ask": SOPHIE_PROXY,
+      "/transcribe": SOPHIE_PROXY,
+      "/session/start": SOPHIE_PROXY,
+    },
+  },
   build: {
     outDir: "dist",
     sourcemap: process.env.NODE_ENV !== "production",

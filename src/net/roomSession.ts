@@ -113,6 +113,9 @@ export class RoomSession {
       this._peerCount = Math.max(1, this._peerCount - 1);
       this._emitPeerCount();
       this.voice.notifyPeerLeft(peerId);
+      for (const handler of this._peerLeaveListeners) {
+        handler(peerId);
+      }
     });
   }
 
@@ -360,6 +363,14 @@ export class RoomSession {
         console.error("[RoomSession] splat load end handler threw:", err);
       }
     }
+  }
+
+  private _peerLeaveListeners = new Set<(peerId: string) => void>();
+
+  /** Fired when a remote peer disconnects. */
+  onPeerLeave(handler: (peerId: string) => void): () => void {
+    this._peerLeaveListeners.add(handler);
+    return () => this._peerLeaveListeners.delete(handler);
   }
 
   private _peerCountListeners = new Set<(count: number) => void>();

@@ -1,5 +1,10 @@
 import { peerColorHex } from "./avatarPalette.js";
 import { getOrCreateDisplayName } from "./displayName.js";
+import {
+  forgetPeer,
+  setLocalDisplayName,
+  setPeerDisplayName,
+} from "./roomContext.js";
 import type { RoomSession } from "./roomSession.js";
 import {
   CHAT_TOPIC,
@@ -31,13 +36,24 @@ export function buildChatPanel(session: RoomSession): {
     [session.localPeerId, displayName],
   ]);
 
+  // Share room context with Sophie (asker + participant names).
+  setLocalDisplayName(displayName);
+
   session.emit(DISPLAY_NAME_TOPIC, {
     name: displayName,
   } satisfies DisplayNamePayload);
 
   session.on(DISPLAY_NAME_TOPIC, (payload, fromPeerId) => {
     const p = payload as DisplayNamePayload;
-    if (p?.name) peerNames.set(fromPeerId, p.name);
+    if (p?.name) {
+      peerNames.set(fromPeerId, p.name);
+      setPeerDisplayName(fromPeerId, p.name);
+    }
+  });
+
+  session.onPeerLeave((peerId) => {
+    peerNames.delete(peerId);
+    forgetPeer(peerId);
   });
 
   const panel = document.createElement("div");
