@@ -1,3 +1,4 @@
+import { currentExhibit } from "./currentSplat.js";
 import { getRoomContext } from "./net/roomContext.js";
 import { SOPHIE_BACKEND as BACKEND } from "./sophieBackend.js";
 
@@ -12,6 +13,16 @@ interface AskResponse {
   exhibit?: string;
   mode?: string;
 }
+
+/** Lets other features (e.g. splat recognition) post into the Sophie chat. */
+export interface SophieChatHandle {
+  addUserMessage(text: string): void;
+  addSophieMessage(text: string, audioUrl?: string): void;
+  setBusy(busy: boolean): void;
+}
+
+/** Live-binding reference to the mounted Sophie chat panel. */
+export let sophieChat: SophieChatHandle | null = null;
 
 /**
  * Builds the Sophie AI chat panel using the /ask endpoint.
@@ -140,6 +151,8 @@ export function buildSophieChatPanel(): HTMLElement {
           history: history.slice(-10),
           asker_name: askerName,
           participants,
+          // Tell Sophie which sculpture is on screen (omitted if unknown).
+          exhibit: currentExhibit()?.name,
         }),
       });
 
@@ -333,6 +346,12 @@ export function buildSophieChatPanel(): HTMLElement {
     log.appendChild(row);
     log.scrollTop = log.scrollHeight;
   }
+
+  sophieChat = {
+    addUserMessage: (text) => appendMessage("user", text),
+    addSophieMessage: (text, audioUrl) => appendMessage("sophie", text, audioUrl),
+    setBusy: setLoading,
+  };
 
   return panel;
 }

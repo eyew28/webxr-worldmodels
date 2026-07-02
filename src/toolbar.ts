@@ -15,6 +15,8 @@ export interface ToolbarHandle {
   addChat(session: RoomSession): ChatHudHandle;
   /** Programmatically open the Sophie panel (e.g. from welcome card). */
   openSophie(): void;
+  /** Ensure the Sophie panel is visible without toggling or playing welcome. */
+  showSophie(): void;
 }
 
 type PanelName = "sophie" | "chat" | "room" | "load";
@@ -138,6 +140,17 @@ export function mountToolbar(): ToolbarHandle {
     activePanel = name;
   }
 
+  /** Show a panel without toggling it closed if it is already active. */
+  function showPanel(name: PanelName) {
+    for (const [pName, el] of panelContainers) {
+      el.style.display = "none";
+      setActive(pName, false);
+    }
+    panelContainers.get(name)!.style.display = "block";
+    setActive(name, true);
+    activePanel = name;
+  }
+
   function setActive(name: PanelName, active: boolean) {
     const btn = btnEls.get(name);
     if (btn) btn.style.background = active ? "#9177c7" : "rgba(255,255,255,0.08)";
@@ -185,6 +198,10 @@ export function mountToolbar(): ToolbarHandle {
     openSophie() {
       togglePanel("sophie");
       playSophieWelcome();
+    },
+
+    showSophie() {
+      showPanel("sophie");
     },
   };
 

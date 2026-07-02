@@ -11,6 +11,7 @@ import {
   VisibilityState,
   World,
 } from "@iwsdk/core";
+import { setSplatWorld } from "./currentSplat.js";
 import { DesktopControlsSystem } from "./desktopControls.js";
 import { GaussianSplatLoader, GaussianSplatLoaderSystem } from "./gaussianSplatLoader.js";
 import { mountLogo } from "./loadSplatHud.js";
@@ -45,6 +46,7 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   },
 })
   .then((world) => {
+    setSplatWorld(world);
     world.camera.position.set(0, 1.5, 0);
     applyEquirectSkybox(world.scene);
     world.scene.add(new THREE.AmbientLight(0xffffff, 1.0));
