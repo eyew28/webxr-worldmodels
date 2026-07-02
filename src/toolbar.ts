@@ -190,9 +190,6 @@ export function mountToolbar(): ToolbarHandle {
 
   toolbar = handle;
 
-  // Play Sophie welcome audio on initial load
-  playSophieWelcome();
-
   return handle;
 }
 
