@@ -7,6 +7,7 @@ import {
   MeshBasicMaterial,
   PlaneGeometry,
   SessionMode,
+  TeleportSystem,
   VisibilityState,
   World,
 } from "@iwsdk/core";
@@ -78,11 +79,22 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     const floor = new Mesh(floorGeometry, new MeshBasicMaterial());
     floor.visible = false;
     const floorEntity = world.createTransformEntity(floor);
-    requestAnimationFrame(() => {
-      floorEntity.addComponent(LocomotionEnvironment, {
-        type: EnvironmentType.STATIC,
-      });
-    });
+
+    // The Locomotor initializes asynchronously (it may spin up a worker), and
+    // its TeleportSystem is only registered once that finishes. Adding the
+    // LocomotionEnvironment before then makes the engine throw "Locomotor not
+    // initialized". Wait for the locomotor to be ready, then register the floor.
+    let floorAttempts = 0;
+    const addFloorEnvironment = () => {
+      if (world.getSystem(TeleportSystem) || floorAttempts++ > 180) {
+        floorEntity.addComponent(LocomotionEnvironment, {
+          type: EnvironmentType.STATIC,
+        });
+        return;
+      }
+      requestAnimationFrame(addFloorEnvironment);
+    };
+    addFloorEnvironment();
   })
   .catch((err) => {
     console.error("[World] Failed to create the IWSDK world:", err);
