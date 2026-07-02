@@ -13,7 +13,9 @@ export async function playSophieWelcome(exhibit?: string): Promise<void> {
     if (!resp.ok) return;
 
     const { audio_url } = await resp.json() as { audio_url?: string };
-    if (audio_url) new Audio(audio_url).play();
+    // Browsers block autoplay until the user interacts with the page — swallow
+    // the resulting rejection so it doesn't surface as an unhandled error.
+    if (audio_url) new Audio(audio_url).play().catch(() => {});
   } catch {
     // fail silently — audio is best-effort
   }
