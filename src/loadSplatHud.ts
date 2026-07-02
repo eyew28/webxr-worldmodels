@@ -1,5 +1,6 @@
 import type { World } from "@iwsdk/core";
 import { GaussianSplatLoaderSystem } from "./gaussianSplatLoader.js";
+import { identifyCurrentSplat } from "./splatRecognize.js";
 import {
   registerLoadSplatButton,
   setLoadSplatButtonLoading,
@@ -88,6 +89,14 @@ export function buildLoadPanel(world: World): HTMLElement {
   });
 
   panel.appendChild(loadBtn);
+
+  // ── Ask Sophie to describe the currently loaded sculpture ──────────────────
+  const identifyBtn = makePanelButton("🔍 Identify this scene", "#3d2d7a");
+  identifyBtn.addEventListener("click", () => {
+    void identifyCurrentSplat();
+  });
+  panel.appendChild(identifyBtn);
+
   return panel;
 }
 
