@@ -5,7 +5,6 @@ import {
   LocomotionEnvironment,
   Mesh,
   MeshBasicMaterial,
-  PanelUI,
   PlaneGeometry,
   SessionMode,
   VisibilityState,
@@ -15,7 +14,6 @@ import { DesktopControlsSystem } from "./desktopControls.js";
 import { GaussianSplatLoader, GaussianSplatLoaderSystem } from "./gaussianSplatLoader.js";
 import { mountLogo } from "./loadSplatHud.js";
 import { MultiplayerSystem } from "./multiplayerSystem.js";
-import { PanelSystem } from "./uiPanel.js";
 import { mountToolbar } from "./toolbar.js";
 import { mountWelcomeCard } from "./welcomeCard.js";
 import { applyEquirectSkybox } from "./skybox.js";
@@ -53,13 +51,7 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
     world
       .registerSystem(GaussianSplatLoaderSystem)
       .registerSystem(DesktopControlsSystem)
-      .registerSystem(MultiplayerSystem)
-      .registerSystem(PanelSystem);
-
-    // 3D VR panel — visible inside headset, positioned 1.5m in front at eye level
-    const panelEntity = world.createTransformEntity();
-    panelEntity.object3D.position.set(0, 1.5, -1.5);
-    panelEntity.addComponent(PanelUI, { config: "./ui/sensai.json" });
+      .registerSystem(MultiplayerSystem);
 
     // Wire toolbar Load panel and VR button now that world is ready
     toolbarInstance.initWorld(world);
