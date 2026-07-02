@@ -31,6 +31,14 @@ export let sophieChat: SophieChatHandle | null = null;
 export function buildSophieChatPanel(): HTMLElement {
   const history: HistoryEntry[] = [];
   let recorder: MediaRecorder | null = null;
+  let currentAudio: HTMLAudioElement | null = null;
+
+  /** Stops Sophie's current speech, if any — lets the visitor barge in. */
+  function interruptSpeech(): void {
+    if (!currentAudio) return;
+    currentAudio.pause();
+    currentAudio = null;
+  }
 
   const panel = document.createElement("div");
   Object.assign(panel.style, {
@@ -193,6 +201,9 @@ export function buildSophieChatPanel(): HTMLElement {
       return;
     }
 
+    // Starting a new recording — treat it as a barge-in and cut Sophie off.
+    interruptSpeech();
+
     let stream: MediaStream;
     try {
       if (!navigator.mediaDevices?.getUserMedia || !("MediaRecorder" in window)) {
@@ -326,11 +337,14 @@ export function buildSophieChatPanel(): HTMLElement {
     row.appendChild(bubble);
 
     if (audioUrl) {
+      interruptSpeech();
+
       const audio = new Audio(audioUrl);
+      currentAudio = audio;
       audio.play().catch(() => {});
 
       const audioTag = document.createElement("div");
-      audioTag.textContent = "🔊 Playing…";
+      audioTag.textContent = "🔊 Playing… (tap 🎤 to interrupt)";
       Object.assign(audioTag.style, {
         fontSize: "11px",
         color: "#7be3a4",
@@ -339,6 +353,7 @@ export function buildSophieChatPanel(): HTMLElement {
       audio.addEventListener("ended", () => {
         audioTag.textContent = "🔊 Played";
         audioTag.style.color = "#555";
+        if (currentAudio === audio) currentAudio = null;
       });
       row.appendChild(audioTag);
     }
