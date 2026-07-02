@@ -1,5 +1,6 @@
 import { currentExhibit } from "./currentSplat.js";
 import { getRoomContext } from "./net/roomContext.js";
+import { broadcastSophieQa, setSophieQaHandler } from "./net/sophieRoomSync.js";
 import { SOPHIE_BACKEND as BACKEND } from "./sophieBackend.js";
 
 interface HistoryEntry {
@@ -172,6 +173,14 @@ export function buildSophieChatPanel(): HTMLElement {
 
       history.push({ role: "user", content: question });
       history.push({ role: "assistant", content: answer });
+
+      broadcastSophieQa({
+        from: askerName,
+        question,
+        answer,
+        audioUrl: data.audio_url,
+        ts: Date.now(),
+      });
     } catch (err) {
       appendMessage(
         "sophie",
@@ -300,6 +309,7 @@ export function buildSophieChatPanel(): HTMLElement {
     role: "user" | "sophie",
     text: string,
     audioUrl?: string,
+    displayName?: string,
   ) {
     const isUser = role === "user";
 
@@ -312,7 +322,7 @@ export function buildSophieChatPanel(): HTMLElement {
     });
 
     const nameLabel = document.createElement("div");
-    nameLabel.textContent = isUser ? "You" : "Sophie";
+    nameLabel.textContent = isUser ? (displayName ?? "You") : "Sophie";
     Object.assign(nameLabel.style, {
       fontSize: "11px",
       color: isUser ? "#9177c7" : "#bfa9ff",
@@ -367,6 +377,12 @@ export function buildSophieChatPanel(): HTMLElement {
     addSophieMessage: (text, audioUrl) => appendMessage("sophie", text, audioUrl),
     setBusy: setLoading,
   };
+
+  // Render other visitors' Sophie Q&A as it's broadcast into the room.
+  setSophieQaHandler((payload) => {
+    appendMessage("user", payload.question, undefined, payload.from);
+    appendMessage("sophie", payload.answer, payload.audioUrl);
+  });
 
   return panel;
 }
