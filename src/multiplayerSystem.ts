@@ -13,9 +13,10 @@ import {
   RoomSession,
   SplatSyncState,
 } from "./net/roomSession.js";
-import { mountChatHud } from "./net/chatHud.js";
+import { type ChatHudHandle } from "./net/chatHud.js";
 import { PeerPresence } from "./peerPresence.js";
 import { setLoadSplatButtonLoading } from "./splatLoadUi.js";
+import { toolbar } from "./toolbar.js";
 
 /**
  * Shared-room networking inspired by google/xrblocks netblocks.
@@ -61,10 +62,12 @@ export class MultiplayerSystem extends createSystem({}) {
         if (hud) hud.textContent = `Peers: ${count}`;
       });
 
-      const chat = mountChatHud(this.session);
-      chat.voiceButton.addEventListener("click", () => {
-        void this.toggleVoice(chat);
-      });
+      const chatHandle = toolbar?.addChat(this.session);
+      if (chatHandle) {
+        chatHandle.voiceButton.addEventListener("click", () => {
+          void this.toggleVoice(chatHandle);
+        });
+      }
 
       this.presence = new PeerPresence(this.world, this.session);
     } catch (err) {
@@ -120,14 +123,15 @@ export class MultiplayerSystem extends createSystem({}) {
     await splatSystem.unloadHostSplat();
   }
 
-  private async toggleVoice(chat: ReturnType<typeof mountChatHud>): Promise<void> {
+  private async toggleVoice(chat: ChatHudHandle): Promise<void> {
     const session = this.session;
     if (!session) return;
 
     if (this.voiceOn) {
       session.voice.disable();
       this.voiceOn = false;
-      chat.voiceButton.textContent = "Enable voice";
+      chat.voiceButton.textContent = "🎙 Enable voice";
+      chat.voiceButton.style.background = "#9177c7";
       chat.appendSystemLine("Voice chat off");
       return;
     }
@@ -135,7 +139,8 @@ export class MultiplayerSystem extends createSystem({}) {
     try {
       await session.voice.enable(session.remotePeerIds);
       this.voiceOn = true;
-      chat.voiceButton.textContent = "Disable voice";
+      chat.voiceButton.textContent = "🔴 Disable voice";
+      chat.voiceButton.style.background = "#cc3333";
       chat.appendSystemLine("Voice chat on");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -168,11 +173,4 @@ export class MultiplayerSystem extends createSystem({}) {
       console.error("[Multiplayer] Failed to apply remote splat:", err);
     }
   }
-}
-
-/** Mount room HUD before world init (netblocks pattern). */
-export function mountRoomHud(): void {
-  import("./net/roomCode.js").then(({ buildRoomCodeHud, getRoomCodeFromUrl }) => {
-    buildRoomCodeHud(getRoomCodeFromUrl());
-  });
 }

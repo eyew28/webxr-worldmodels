@@ -1,74 +1,64 @@
 import type { World } from "@iwsdk/core";
-import { VisibilityState } from "@iwsdk/core";
 import { GaussianSplatLoaderSystem } from "./gaussianSplatLoader.js";
 import {
   registerLoadSplatButton,
   setLoadSplatButtonLoading,
 } from "./splatLoadUi.js";
-import { enterXR } from "./xrSession.js";
 
 const SPLAT_FILE_ACCEPT = ".spz,.ply,.ksplat,.rad";
 
-function makeHudButton(text: string, background = "#9177c7"): HTMLButtonElement {
-  const btn = document.createElement("button");
-  btn.textContent = text;
-  Object.assign(btn.style, {
-    padding: "6px 10px",
-    background,
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    width: "100%",
-  });
-  return btn;
-}
-
-/** Top-left Load Splat + Enter XR controls. */
-export function mountLoadSplatHud(world: World): void {
+/** Small logo fixed to top-left. */
+export function mountLogo(): void {
   if (typeof document === "undefined") return;
-
-  const root = document.createElement("div");
-  root.id = "load-splat-hud";
-  Object.assign(root.style, {
+  const wrap = document.createElement("div");
+  Object.assign(wrap.style, {
     position: "fixed",
     top: "12px",
     left: "12px",
     zIndex: "999",
-    minWidth: "220px",
-    padding: "12px 14px",
-    background: "rgba(20,20,30,0.85)",
-    borderRadius: "10px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+    pointerEvents: "none",
+  });
+  const img = document.createElement("img");
+  img.src = "./logo.png";
+  img.alt = "Logo";
+  Object.assign(img.style, {
+    width: "140px",
+    height: "auto",
+    display: "block",
+    opacity: "0.9",
+  });
+  wrap.appendChild(img);
+  document.body.appendChild(wrap);
+}
+
+/** Returns the Load Splat panel content element (positioning handled by toolbar). */
+export function buildLoadPanel(world: World): HTMLElement {
+  const panel = document.createElement("div");
+  Object.assign(panel.style, {
+    padding: "16px",
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    gap: "8px",
+    gap: "10px",
+    font: "13px system-ui, sans-serif",
+    color: "#fff",
   });
 
-  const logo = document.createElement("img");
-  logo.src = "./logo.png";
-  logo.alt = "Logo";
-  Object.assign(logo.style, {
-    width: "100%",
-    maxWidth: "192px",
-    height: "auto",
-    objectFit: "contain",
-    display: "block",
-  });
-  root.appendChild(logo);
+  const header = document.createElement("div");
+  header.textContent = "📁 Load 3D Scene";
+  Object.assign(header.style, { fontWeight: "600", color: "#bfa9ff" });
+  panel.appendChild(header);
 
-  const divider = document.createElement("div");
-  Object.assign(divider.style, {
-    width: "80%",
-    height: "1px",
-    background: "#7b2ff2",
-    margin: "2px 0",
+  const hint = document.createElement("div");
+  hint.textContent =
+    "Upload a Gaussian Splat file from your device. Supported formats: .spz, .ply, .ksplat, .rad";
+  Object.assign(hint.style, {
+    fontSize: "12px",
+    color: "#888",
+    lineHeight: "1.55",
   });
-  root.appendChild(divider);
+  panel.appendChild(hint);
 
-  const loadBtn = makeHudButton("Load Splat", "#7b2ff2");
+  const loadBtn = makePanelButton("Choose file…", "#9177c7");
   loadBtn.id = "load-splat-button";
   registerLoadSplatButton(loadBtn);
 
@@ -79,19 +69,17 @@ export function mountLoadSplatHud(world: World): void {
     input.addEventListener("change", async () => {
       const file = input.files?.[0];
       if (!file) return;
-
       const splatSystem = world.getSystem(GaussianSplatLoaderSystem);
       if (!splatSystem) {
-        console.error("[LoadSplatHud] GaussianSplatLoaderSystem is not registered.");
+        console.error("[LoadPanel] GaussianSplatLoaderSystem not found.");
         return;
       }
-
       setLoadSplatButtonLoading(true);
       try {
         await splatSystem.unloadHostSplat();
         await splatSystem.loadFromFile(file);
       } catch (err) {
-        console.error("[LoadSplatHud] Failed to load splat file:", err);
+        console.error("[LoadPanel] Failed to load splat:", err);
       } finally {
         setLoadSplatButtonLoading(false);
       }
@@ -99,28 +87,23 @@ export function mountLoadSplatHud(world: World): void {
     input.click();
   });
 
-  const xrBtn = makeHudButton("Enter VR", "#fbbf24");
-  xrBtn.style.color = "#0d0221";
-  xrBtn.addEventListener("click", () => {
-    if (world.visibilityState.value === VisibilityState.NonImmersive) {
-      enterXR(world).catch((err) => {
-        console.error("[LoadSplatHud] Failed to enter XR:", err);
-      });
-    } else {
-      world.exitXR();
-    }
-  });
+  panel.appendChild(loadBtn);
+  return panel;
+}
 
-  world.visibilityState.subscribe((visibilityState) => {
-    xrBtn.textContent =
-      visibilityState === VisibilityState.NonImmersive
-        ? "Enter VR"
-        : "Exit to Browser";
+function makePanelButton(text: string, bg: string): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.textContent = text;
+  Object.assign(btn.style, {
+    padding: "9px 14px",
+    background: bg,
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: "500",
+    width: "100%",
   });
-
-  root.appendChild(loadBtn);
-  root.appendChild(xrBtn);
-  loadBtn.style.width = "100%";
-  xrBtn.style.width = "100%";
-  document.body.appendChild(root);
+  return btn;
 }
