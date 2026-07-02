@@ -1,4 +1,4 @@
-const BACKEND = "https://louvre-xr-backend-production.up.railway.app";
+import { SOPHIE_BACKEND as BACKEND } from "./sophieBackend.js";
 
 export async function playSophieWelcome(exhibit?: string): Promise<void> {
   try {
