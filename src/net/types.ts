@@ -29,7 +29,17 @@ export interface PresencePosePayload {
   ts: number;
 }
 
+/** A completed Sophie Q&A, broadcast so every visitor's chat panel sees it. */
+export interface SophieQaPayload {
+  from: string;
+  question: string;
+  answer: string;
+  audioUrl?: string;
+  ts: number;
+}
+
 export const CHAT_TOPIC = "chat-message";
 export const DISPLAY_NAME_TOPIC = "display-name";
 export const VOICE_SIGNAL_TOPIC = "voice-signal";
 export const PRESENCE_TOPIC = "presence-pose";
+export const SOPHIE_QA_TOPIC = "sophie-qa";

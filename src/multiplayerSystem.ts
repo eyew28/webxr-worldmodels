@@ -14,6 +14,7 @@ import {
   SplatSyncState,
 } from "./net/roomSession.js";
 import { type ChatHudHandle } from "./net/chatHud.js";
+import { bindSophieRoomSync } from "./net/sophieRoomSync.js";
 import { PeerPresence } from "./peerPresence.js";
 import { setLoadSplatButtonLoading } from "./splatLoadUi.js";
 import { toolbar } from "./toolbar.js";
@@ -56,6 +57,7 @@ export class MultiplayerSystem extends createSystem({}) {
       this.session.onSplatLoadBegin(() => this.prepareRemoteSplat());
       this.session.onSplatLoadEnd(() => setLoadSplatButtonLoading(false));
       this.session.onSplatLoad((state) => this.applyRemoteSplat(state));
+      bindSophieRoomSync(this.session);
 
       this.session.onPeerCountChange((count) => {
         const hud = document.getElementById("room-hud-peer-count");
