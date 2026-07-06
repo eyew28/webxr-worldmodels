@@ -40,6 +40,13 @@ export function getRelayUrl(): string {
   return `${protocol}//${location.hostname}:8765`;
 }
 
+/** Same-machine local dev: room codes sync via BroadcastChannel (no relay). */
+export function shouldUseBroadcastChannel(hasRoomCode: boolean): boolean {
+  if (!hasRoomCode) return true;
+  const host = location.hostname;
+  return host === "localhost" || host === "127.0.0.1";
+}
+
 function gotoRoom(code: string) {
   const url = new URL(location.href);
   url.searchParams.set("room", code);

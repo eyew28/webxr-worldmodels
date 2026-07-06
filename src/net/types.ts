@@ -43,3 +43,46 @@ export const DISPLAY_NAME_TOPIC = "display-name";
 export const VOICE_SIGNAL_TOPIC = "voice-signal";
 export const PRESENCE_TOPIC = "presence-pose";
 export const SOPHIE_QA_TOPIC = "sophie-qa";
+export const SKYBOX_TOPIC = "skybox-load";
+export const PEER_READY_TOPIC = "peer-ready";
+
+export type SkyboxSyncState =
+  | { kind: "url"; skyboxUrl: string }
+  | { kind: "file"; fileName: string; base64: string; mimeType?: string }
+  | { kind: "cleared" };
+
+export interface SkyboxUrlPayload {
+  kind: "url";
+  skyboxUrl: string;
+}
+
+export interface SkyboxClearPayload {
+  kind: "clear";
+}
+
+export interface SkyboxFileStartPayload {
+  kind: "file-start";
+  transferId: string;
+  fileName: string;
+  mimeType?: string;
+  totalChunks: number;
+}
+
+export interface SkyboxFileChunkPayload {
+  kind: "file-chunk";
+  transferId: string;
+  chunkIndex: number;
+  data: string;
+}
+
+export interface SkyboxFileEndPayload {
+  kind: "file-end";
+  transferId: string;
+}
+
+export type SkyboxSyncPayload =
+  | SkyboxUrlPayload
+  | SkyboxClearPayload
+  | SkyboxFileStartPayload
+  | SkyboxFileChunkPayload
+  | SkyboxFileEndPayload;
