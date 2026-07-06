@@ -48,7 +48,9 @@ World.create(document.getElementById("scene-container") as HTMLDivElement, {
   .then((world) => {
     setSplatWorld(world);
     world.camera.position.set(0, 1.5, 0);
-    applyEquirectSkybox(world.scene);
+    applyEquirectSkybox(world.scene).catch((err) => {
+      console.error("[World] Failed to load default 360:", err);
+    });
     world.scene.add(new THREE.AmbientLight(0xffffff, 1.0));
 
     world

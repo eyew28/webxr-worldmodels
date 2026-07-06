@@ -5,6 +5,14 @@ import {
   registerLoadSplatButton,
   setLoadSplatButtonLoading,
 } from "./splatLoadUi.js";
+import {
+  registerLoad360Button,
+  registerClear360Button,
+  pickAndApplySkybox,
+  clearAndSyncSkybox,
+  setLoad360ButtonLoading,
+  setClear360ButtonLoading,
+} from "./skybox.js";
 
 const SPLAT_FILE_ACCEPT = ".spz,.ply,.ksplat,.rad";
 
@@ -89,6 +97,53 @@ export function buildLoadPanel(world: World): HTMLElement {
   });
 
   panel.appendChild(loadBtn);
+
+  const row360 = document.createElement("div");
+  Object.assign(row360.style, {
+    display: "flex",
+    gap: "8px",
+  });
+
+  const load360Btn = makePanelButton("Load 360", "#7ac0ff");
+  load360Btn.style.color = "#0d0221";
+  load360Btn.style.flex = "1";
+  load360Btn.id = "load-360-button";
+  registerLoad360Button(load360Btn);
+
+  load360Btn.addEventListener("click", () => {
+    void (async () => {
+      setLoad360ButtonLoading(true);
+      try {
+        await pickAndApplySkybox(world.scene);
+      } catch (err) {
+        console.error("[LoadPanel] Failed to load 360:", err);
+      } finally {
+        setLoad360ButtonLoading(false);
+      }
+    })();
+  });
+
+  const clear360Btn = makePanelButton("Clear 360", "#4a5568");
+  clear360Btn.style.flex = "1";
+  clear360Btn.id = "clear-360-button";
+  registerClear360Button(clear360Btn);
+
+  clear360Btn.addEventListener("click", () => {
+    void (async () => {
+      setClear360ButtonLoading(true);
+      try {
+        await clearAndSyncSkybox(world.scene);
+      } catch (err) {
+        console.error("[LoadPanel] Failed to clear 360:", err);
+      } finally {
+        setClear360ButtonLoading(false);
+      }
+    })();
+  });
+
+  row360.appendChild(load360Btn);
+  row360.appendChild(clear360Btn);
+  panel.appendChild(row360);
 
   // ── Ask Sophie to describe the currently loaded sculpture ──────────────────
   const identifyBtn = makePanelButton("🔍 Identify this scene", "#3d2d7a");

@@ -15,8 +15,16 @@ import {
 } from "./net/roomSession.js";
 import { type ChatHudHandle } from "./net/chatHud.js";
 import { bindSophieRoomSync } from "./net/sophieRoomSync.js";
+import type { SkyboxSyncState } from "./net/types.js";
 import { PeerPresence } from "./peerPresence.js";
 import { setLoadSplatButtonLoading } from "./splatLoadUi.js";
+import {
+  applyEquirectSkybox,
+  applyEquirectSkyboxFromBytes,
+  clearSkybox,
+  setSkyboxSyncHandlers,
+  SKYBOX_URL,
+} from "./skybox.js";
 import { toolbar } from "./toolbar.js";
 
 /**
@@ -57,7 +65,18 @@ export class MultiplayerSystem extends createSystem({}) {
       this.session.onSplatLoadBegin(() => this.prepareRemoteSplat());
       this.session.onSplatLoadEnd(() => setLoadSplatButtonLoading(false));
       this.session.onSplatLoad((state) => this.applyRemoteSplat(state));
+      this.session.onSkyboxLoad((state) => this.applyRemoteSkybox(state));
       bindSophieRoomSync(this.session);
+
+      this.session.rememberSkyboxState({ kind: "url", skyboxUrl: SKYBOX_URL });
+      setSkyboxSyncHandlers({
+        onLoad: async (file) => {
+          await this.broadcastLocalSkybox(file);
+        },
+        onClear: async () => {
+          this.session?.broadcastSkyboxClear();
+        },
+      });
 
       this.session.onPeerCountChange((count) => {
         const hud = document.getElementById("room-hud-peer-count");
@@ -72,6 +91,7 @@ export class MultiplayerSystem extends createSystem({}) {
       }
 
       this.presence = new PeerPresence(this.world, this.session);
+      this.session.announcePeerReady();
     } catch (err) {
       console.error("[Multiplayer] Failed to join room:", err);
     }
@@ -151,6 +171,31 @@ export class MultiplayerSystem extends createSystem({}) {
     }
   }
 
+  private async broadcastLocalSkybox(file: File): Promise<void> {
+    if (!this.session) return;
+    const bytes = await file.arrayBuffer();
+    await this.session.broadcastSkyboxFile(file.name, bytes, file.type || undefined);
+  }
+
+  private async applyRemoteSkybox(state: SkyboxSyncState): Promise<void> {
+    try {
+      if (state.kind === "url") {
+        await applyEquirectSkybox(this.world.scene, state.skyboxUrl);
+      } else if (state.kind === "cleared") {
+        clearSkybox(this.world.scene);
+      } else {
+        const bytes = base64ToBytes(state.base64);
+        await applyEquirectSkyboxFromBytes(
+          this.world.scene,
+          bytes,
+          state.mimeType ?? guessImageMime(state.fileName),
+        );
+      }
+    } catch (err) {
+      console.error("[Multiplayer] Failed to apply remote 360:", err);
+    }
+  }
+
   private async applyRemoteSplat(state: SplatSyncState): Promise<void> {
     const splatSystem = this.world.getSystem(GaussianSplatLoaderSystem);
     if (!splatSystem) return;
@@ -174,5 +219,17 @@ export class MultiplayerSystem extends createSystem({}) {
     } catch (err) {
       console.error("[Multiplayer] Failed to apply remote splat:", err);
     }
+  }
+}
+
+function guessImageMime(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "png":
+      return "image/png";
+    case "webp":
+      return "image/webp";
+    default:
+      return "image/jpeg";
   }
 }
